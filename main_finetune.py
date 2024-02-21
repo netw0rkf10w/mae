@@ -23,7 +23,7 @@ from torch.utils.tensorboard import SummaryWriter
 
 import timm
 
-assert timm.__version__ == "0.3.2" # version check
+# assert timm.__version__ == "0.3.2" # version check
 from timm.models.layers import trunc_normal_
 from timm.data.mixup import Mixup
 from timm.loss import LabelSmoothingCrossEntropy, SoftTargetCrossEntropy
@@ -33,6 +33,7 @@ import util.misc as misc
 from util.datasets import build_dataset
 from util.pos_embed import interpolate_pos_embed
 from util.misc import NativeScalerWithGradNormCount as NativeScaler
+from util.adamw import AdamW
 
 import models_vit
 
@@ -58,6 +59,9 @@ def get_args_parser():
                         help='Drop path rate (default: 0.1)')
 
     # Optimizer parameters
+    parser.add_argument('--opt_compiled', action='store_true', default=False,
+                        help='Use compiled optimizer')
+    
     parser.add_argument('--clip_grad', type=float, default=None, metavar='NORM',
                         help='Clip gradient norm (default: None, no clipping)')
     parser.add_argument('--weight_decay', type=float, default=0.05,
@@ -284,7 +288,8 @@ def main(args):
         no_weight_decay_list=model_without_ddp.no_weight_decay(),
         layer_decay=args.layer_decay
     )
-    optimizer = torch.optim.AdamW(param_groups, lr=args.lr)
+    # optimizer = torch.optim.AdamW(param_groups, lr=args.lr)
+    optimizer = AdamW(param_groups, lr=args.lr, compiled=args.opt_compiled)
     loss_scaler = NativeScaler()
 
     if mixup_fn is not None:
